@@ -1,25 +1,40 @@
-import { useEffect, useState } from 'react';
-import api from "./api/axios"
+import { useEffect, useState } from "react";
+import api from "./api/axios";
+import { useErrorBoundary } from "react-error-boundary";
 
-function Tasks() {
+function Tasks({ fetchRetryCounter }) {
   const [tasks, setTasks] = useState([]);
-
+  const [loading, setLoading] = useState(false);
+  const { showBoundary } = useErrorBoundary();
   useEffect(() => {
-    api.get('/tasks')
-      .then(res => setTasks(res.data))
-      .catch(err => console.error(err));
-  }, []);
-
+    async function fetchTasks() {
+      try {
+        setLoading(true);
+        const res = await api.get("/tasks");
+        console.log(res);
+        setTasks(res.data);
+      } catch (error) {
+        showBoundary(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTasks();
+  }, [fetchRetryCounter]);
   return (
     <div>
       <h2>Tasks</h2>
-      <ul>
-        {tasks.map(task => (
-          <li key={task.id}>
-            {task.title} {task.isDone ? '✅' : '❌'}
-          </li>
-        ))}
-      </ul>
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <ul>
+          {tasks.map((task) => (
+            <li key={task.id}>
+              {task.title} {task.isDone ? "✅" : "❌"}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
